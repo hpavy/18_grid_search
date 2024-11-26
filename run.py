@@ -12,7 +12,6 @@ import json
 class RunSimulation():
     def __init__(self, hyper_param, folder_result_name, param_adim):
         self.hyper_param = hyper_param
-        self.time_start = time.time()
         self.folder_result_name = folder_result_name
         self.folder_result = "results/" + folder_result_name
         # test seed, keep the same to compare the results
@@ -38,13 +37,15 @@ class RunSimulation():
         ###############################################
 
         # Data loading
-        X_train_np, U_train_np, X_full, U_full, X_border_np, mean_std = charge_data(
+        X_train_np, U_train_np, X_full, U_full, X_border_np, X_border_test_np, mean_std = charge_data(
             self.hyper_param, self.param_adim)
         X_train = torch.from_numpy(X_train_np).requires_grad_().to(
             torch.float32).to(self.device)
         U_train = torch.from_numpy(U_train_np).requires_grad_().to(
             torch.float32).to(self.device)
         X_border = torch.from_numpy(X_border_np).requires_grad_().to(
+            torch.float32).to(self.device)
+        X_border_test = torch.from_numpy(X_border_test_np).requires_grad_().to(
             torch.float32).to(self.device)
 
         # le domaine de résolution
@@ -88,7 +89,6 @@ class RunSimulation():
             # On entraine le modèle
             ###############################################
             train(
-                nb_epoch=self.hyper_param["nb_epoch"],
                 train_loss=train_loss,
                 test_loss=test_loss,
                 poids=[self.hyper_param["weight_data"],
@@ -103,7 +103,6 @@ class RunSimulation():
                 X_test_data=X_test_data,
                 U_test_data=U_test_data,
                 Re=self.hyper_param["Re"],
-                time_start=self.time_start,
                 f=f,
                 u_mean=mean_std["u_mean"],
                 v_mean=mean_std["v_mean"],
@@ -117,9 +116,11 @@ class RunSimulation():
                 save_rate=self.hyper_param["save_rate"],
                 batch_size=self.hyper_param["batch_size"],
                 scheduler=scheduler,
-                X_border=X_border
+                X_border=X_border,
+                X_border_test=X_border_test,
+                time_simu=self.hyper_param['time_simu'], 
+                mean_std=mean_std
             )
-
         # On save le model et les losses
 
         torch.save(

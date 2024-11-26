@@ -70,7 +70,32 @@ def charge_data(hyper_param, param_adim):
     y_int = (y_norm_full.max()-y_norm_full.min())/hyper_param['nb_points_axes']
     X_train = np.zeros((0, 3))
     U_train = np.zeros((0, 3))
+
     for time in np.unique(t_norm_full):
+        # les points autour du cylindre dans un rayon de 0.025
+        masque = (
+            ((x_full**2 + y_full**2) < ((0.025/param_adim['L'])**2))
+            & (t_norm_full == time))
+        indice = np.random.choice(
+                        np.arange(len(x_norm_full[masque])), size=hyper_param['nb_points_close_cylinder'], replace=False)
+        new_x = np.concatenate(
+            (
+                x_norm_full[masque][indice].reshape(-1, 1),
+                y_norm_full[masque][indice].reshape(-1, 1),
+                t_norm_full[masque][indice].reshape(-1, 1)
+            ), axis=1
+        )
+        new_y = np.concatenate(
+            (
+                u_norm_full[masque][indice].reshape(-1, 1),
+                v_norm_full[masque][indice].reshape(-1, 1),
+                p_norm_full[masque][indice].reshape(-1, 1)
+            ), axis=1
+        )
+        X_train = np.concatenate((X_train, new_x))
+        U_train = np.concatenate((U_train, new_y))
+        
+        # les points sur chaque axe
         for x_num in range(hyper_param['nb_points_axes']):
             for y_num in range(hyper_param['nb_points_axes']):
                 masque = (
@@ -104,7 +129,7 @@ def charge_data(hyper_param, param_adim):
 
     # les points du bord
 
-    nb_border = 100
+    nb_border = hyper_param['nb_border']
     teta_int = np.linspace(0, 2*np.pi, nb_border)
     X_border = np.zeros((0, 3))
     for time in np.unique(t_norm_full):
@@ -122,6 +147,23 @@ def charge_data(hyper_param, param_adim):
             ).reshape(-1, 3)
             X_border = np.concatenate((X_border, new_x))
 
+    teta_int_test = np.linspace(0, 2*np.pi, 1000)
+    X_border_test = np.zeros((0, 3))
+    for time in np.unique(t_norm_full):
+        for teta in teta_int:
+            x_ = ((((0.025/2)*np.cos(teta)) /
+                  param_adim['L'])-x_full.mean())/x_full.std()
+            y_ = ((((0.025/2)*np.sin(teta)) /
+                  param_adim['L'])-y_full.mean())/y_full.std()
+            new_x = np.array(
+                [
+                    x_,
+                    y_,
+                    time
+                ]
+            ).reshape(-1, 3)
+            X_border_test = np.concatenate((X_border_test, new_x))
+
     mean_std = {
         "u_mean": u_full.mean(),
         "v_mean": v_full.mean(),
@@ -137,7 +179,7 @@ def charge_data(hyper_param, param_adim):
         "p_std": p_full.std(),
     }
 
-    return X_train, U_train, X_full, U_full, X_border, mean_std
+    return X_train, U_train, X_full, U_full, X_border, X_border_test, mean_std
 
 
 def init_model(f, hyper_param, device, folder_result):
@@ -164,11 +206,13 @@ def init_model(f, hyper_param, device, folder_result):
                 "total": list(csv_train["total"]),
                 "data": list(csv_train["data"]),
                 "pde": list(csv_train["pde"]),
+                "border": list(csv_train["border"])
             }
             test_loss = {
                 "total": list(csv_test["total"]),
                 "data": list(csv_test["data"]),
                 "pde": list(csv_test["pde"]),
+                "border": list(csv_test["border"])
             }
             print("\nLoss chargée\n", file=f)
             print("\nLoss chargée\n")
@@ -176,8 +220,8 @@ def init_model(f, hyper_param, device, folder_result):
         else:
             print("Nouveau modèle\n", file=f)
             print("Nouveau modèle\n")
-            train_loss = {"total": [], "data": [], "pde": []}
-            test_loss = {"total": [], "data": [], "pde": []}
+            train_loss = {"total": [], "data": [], "pde": [], "border": []}
+            test_loss = {"total": [], "data": [], "pde": [], "border": []}
     else:
         print("transfert learning")
         # Charger l'état du modèle et de l'optimiseur
