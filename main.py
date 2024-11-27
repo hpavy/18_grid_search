@@ -15,11 +15,11 @@ nb_neurons_min = 30
 nb_neurons_max = 100
 lr_init_min = 5e-4
 lr_init_max = 5e-2
-nb_points_pde_min = 10000
+nb_points_pde_min = 500000
 nb_points_pde_max = 4000000
-batch_size_min = 1000
-batch_size_max = 10000
-nb_border_min = 50
+batch_size_min = 3000
+batch_size_max = 30000
+nb_border_min = 100
 nb_border_max = 1000
 
 
@@ -30,7 +30,7 @@ time_simu = 7200
 
 ############# VARIABLES ################
 
-for nb_simu in range(12):
+for nb_simu in range(10):
     folder_result_name = name_simu+'_'+str(nb_simu)  # name of the result folder
     lr_init = np.logspace(np.log10(lr_init_min), np.log10(lr_init_max), 1).item()  # pour avoir une distribution logarithmique 
     nb_points_pde = int(np.logspace(np.log10(nb_points_pde_min), np.log10(nb_points_pde_max), 1).item())

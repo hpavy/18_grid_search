@@ -94,7 +94,7 @@ def charge_data(hyper_param, param_adim):
         )
         X_train = np.concatenate((X_train, new_x))
         U_train = np.concatenate((U_train, new_y))
-        
+
         # les points sur chaque axe
         for x_num in range(hyper_param['nb_points_axes']):
             for y_num in range(hyper_param['nb_points_axes']):
@@ -150,7 +150,7 @@ def charge_data(hyper_param, param_adim):
     teta_int_test = np.linspace(0, 2*np.pi, 1000)
     X_border_test = np.zeros((0, 3))
     for time in np.unique(t_norm_full):
-        for teta in teta_int:
+        for teta in teta_int_test:
             x_ = ((((0.025/2)*np.cos(teta)) /
                   param_adim['L'])-x_full.mean())/x_full.std()
             y_ = ((((0.025/2)*np.sin(teta)) /
